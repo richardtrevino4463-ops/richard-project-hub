@@ -1,43 +1,61 @@
-from flask import Flask, render_template, request
+import os
+from flask import Flask, render_template, request, redirect, url_parser, flash
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
+app.secret_key = "supersecretkeyforflashmessages"  # Required for flash messages to work
 
-visitor_count = 0
+# Flask-Mail Configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'richardtrevino4463@gmail.com'
 
+# SECURITY FIX: Pulling the password safely from Render's environment variables
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+
+app.config['MAIL_DEFAULT_SENDER'] = 'richardtrevino4463@gmail.com'
+
+mail = Mail(app)
+
+# Route 1: Home Page (Skyline)
 @app.route("/")
 def home():
-    global visitor_count
-    visitor_count += 1
-    return render_template("home.html", count=visitor_count)
+    return render_template("home.html")
 
+# Route 2: Projects Showcase Page
 @app.route("/projects")
 def projects():
-    my_projects = [
-        {"title": "Python Web Server", "description": "Built a local Flask web application from scratch, bypassing OneDrive permission locks.", "status": "Completed 🚀"},
-        {"title": "Future Project #1", "description": "A cool script, game, or automation tool I plan to build next.", "status": "In Progress 🛠️"},
-        {"title": "Future Project #2", "description": "Another awesome coding creation to show off here.", "status": "Planning 📝"}
-    ]
-    return render_template("index.html", projects=my_projects)
+    return render_template("index.html")
 
-# NEW: This route handles both viewing the contact page and submitting the form
+# Route 3: Contact Form Page (Handles both viewing the form and submitting it)
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
-    message_sent = False
     if request.method == "POST":
-        # Capture what the user typed into the form fields
         name = request.form.get("name")
         email = request.form.get("email")
-        user_message = request.form.get("message")
+        message_content = request.form.get("message")
         
-        # Print the message cleanly right into your VS Code terminal
-        print("\n=== 📨 NEW MESSAGE RECEIVED ===")
-        print(f"From: {name} ({email})")
-        print(f"Message: {user_message}")
-        print("===============================\n")
+        # Create the email message
+        msg = Message(
+            subject=f"New Portfolio Message from {name}",
+            recipients=['richardtrevino4463@gmail.com'],
+            body=f"You have received a new message from your portfolio contact form:\n\n"
+                 f"Name: {name}\n"
+                 f"Email: {email}\n\n"
+                 f"Message:\n{message_content}"
+        )
         
-        message_sent = True
+        try:
+            mail.send(msg)
+            flash("Success! Your message has been sent.", "success")
+        except Exception as e:
+            flash("Someting went wrong. Please try again later.", "danger")
+            print(f"Email Error: {e}")
+            
+        return redirect("/contact")
         
-    return render_template("contact.html", message_sent=message_sent)
+    return render_template("contact.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
