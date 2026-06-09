@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_parser, flash
+from flask import Flask, render_template, request, redirect, flash
 from flask_mail import Mail, Message
 
 app = Flask(__name__)
@@ -50,7 +50,7 @@ def contact():
             mail.send(msg)
             flash("Success! Your message has been sent.", "success")
         except Exception as e:
-            flash("Someting went wrong. Please try again later.", "danger")
+            flash("Something went wrong. Please try again later.", "danger")
             print(f"Email Error: {e}")
             
         return redirect("/contact")
